@@ -9,8 +9,6 @@ import CoreData
 import UIKit
 
 class CoreDataManager {
-    public var models = [ToDoListItem]()
-
     public static let shared = CoreDataManager()
 
     private lazy var persistentContainer: NSPersistentContainer = {
@@ -18,8 +16,6 @@ class CoreDataManager {
         container.loadPersistentStores { description, error in
             if let error {
                 print(error.localizedDescription)
-            } else {
-                print("DB url -", description.url?.absoluteString)
             }
         }
         return container
@@ -31,6 +27,7 @@ class CoreDataManager {
 
     private init() { }
 
+    // MARK: - Public functions
     public func saveContext() {
         let context = persistentContainer.viewContext
         if context.hasChanges {
@@ -42,11 +39,9 @@ class CoreDataManager {
         }
     }
 
-    public func getAllItems() {
+    public func getAllItems() -> [ToDoListItem]{
         do {
-            models = try context.fetch(ToDoListItem.fetchRequest())
-        } catch {
-            print("Get all items error",error)
+            return (try? context.fetch(ToDoListItem.fetchRequest()) as? [ToDoListItem]) ?? []
         }
     }
 
@@ -54,13 +49,24 @@ class CoreDataManager {
         let newItem = ToDoListItem(context: context)
         newItem.name = name
         newItem.createdAt = Date()
+        newItem.isCompleted = false
 
         do {
             try context.save()
-            getAllItems()
             completion()
         } catch {
             print("Create error",error)
+        }
+    }
+
+    public func markAsCompleted(item: ToDoListItem, completion: () -> ()) {
+        item.isCompleted = true
+
+        do {
+            try context.save()
+            completion()
+        } catch {
+            print("Mark as completed error",error)
         }
     }
 
@@ -69,7 +75,6 @@ class CoreDataManager {
 
         do {
             try context.save()
-            getAllItems()
             completion()
         } catch {
             print("Delete error",error)
@@ -81,11 +86,9 @@ class CoreDataManager {
 
         do {
             try context.save()
-            getAllItems()
             completion()
         } catch {
             print("Update error",error)
         }
     }
-
 }
