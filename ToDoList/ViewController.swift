@@ -34,7 +34,7 @@ class ViewController: UIViewController {
 
     // MARK: - Setup Table View
     private func setupTableView() {
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.register(TableViewCell.self, forCellReuseIdentifier: TableViewCell.identifier)
         tableView.delegate = self
         tableView.dataSource = self
 
@@ -117,8 +117,11 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let model = models[indexPath.row]
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = model.name
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: TableViewCell.identifier,
+                                                       for: indexPath) as? TableViewCell else {
+            return UITableViewCell()
+        }
+        cell.configureCell(with: model)
         return cell
     }
 
@@ -127,5 +130,9 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
         let item = models[indexPath.row]
 
         setupAlert(with: item)
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 58
     }
 }
