@@ -1,5 +1,5 @@
 //
-//  ViewController.swift
+//  ToDoListViewController.swift
 //  ToDoList
 //
 //  Created by Ваня Сокол on 01.09.2023.
@@ -7,7 +7,7 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ToDoListViewController: UIViewController {
     private var models = [ToDoListItem]()
     private let tableView = UITableView()
 
@@ -34,56 +34,13 @@ class ViewController: UIViewController {
 
     // MARK: - Setup Table View
     private func setupTableView() {
-        tableView.register(TableViewCell.self, forCellReuseIdentifier: TableViewCell.identifier)
+        tableView.register(ToDoListCell.self, forCellReuseIdentifier: ToDoListCell.identifier)
         tableView.delegate = self
         tableView.dataSource = self
 
         view.addSubview(tableView)
 
         tableView.frame = view.bounds
-    }
-
-    // MARK: - Setup Alert
-    private func setupAlert(with item: ToDoListItem) {
-        let sheet = UIAlertController(title: "Choose Action",
-                                      message: nil,
-                                      preferredStyle: .actionSheet)
-
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-
-        sheet.addAction(UIAlertAction(title: "Edit", style: .default, handler: { [weak self] _ in
-            let alert = UIAlertController(title: "Edit Item",
-                                          message: "Edit your item",
-                                          preferredStyle: .alert)
-            alert.addTextField()
-            alert.textFields?.first?.text = item.name
-
-            alert.addAction(UIAlertAction(title: "Save", style: .cancel, handler: { [weak self] _ in
-                guard let field = alert.textFields?.first, let newName = field.text, !newName.isEmpty else {
-                    return
-                }
-
-                CoreDataManager.shared.updateItem(item: item, newName: newName) {
-                    self?.models = CoreDataManager.shared.getAllItems()
-                    DispatchQueue.main.async {
-                        self?.tableView.reloadData()
-                    }
-                }
-            }))
-
-            self?.present(alert, animated: true)
-        }))
-
-        sheet.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { [weak self] _ in
-            CoreDataManager.shared.deleteItem(item: item) {
-                self?.models = CoreDataManager.shared.getAllItems()
-                DispatchQueue.main.async {
-                    self?.tableView.reloadData()
-                }
-            }
-        }))
-
-        present(sheet, animated: true)
     }
 
     // MARK: - Actions
@@ -110,15 +67,15 @@ class ViewController: UIViewController {
 }
 
 // MARK: - UITableViewDelegate, UITableViewDataSource
-extension ViewController: UITableViewDelegate, UITableViewDataSource {
+extension ToDoListViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return models.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let model = models[indexPath.row]
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: TableViewCell.identifier,
-                                                       for: indexPath) as? TableViewCell else {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: ToDoListCell.identifier,
+                                                       for: indexPath) as? ToDoListCell else {
             return UITableViewCell()
         }
         cell.configureCell(with: model)
@@ -134,5 +91,59 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 58
+    }
+}
+
+// MARK: - Setup Alert
+extension ToDoListViewController {
+    private func setupAlert(with item: ToDoListItem) {
+        let sheet = UIAlertController(title: "Choose Action",
+                                      message: nil,
+                                      preferredStyle: .actionSheet)
+
+        sheet.addAction(UIAlertAction(title: "Edit", style: .default, handler: { [weak self] _ in
+            let alert = UIAlertController(title: "Edit Item",
+                                          message: "Edit your item",
+                                          preferredStyle: .alert)
+            alert.addTextField()
+            alert.textFields?.first?.text = item.name
+
+            alert.addAction(UIAlertAction(title: "Save", style: .cancel, handler: { [weak self] _ in
+                guard let field = alert.textFields?.first, let newName = field.text, !newName.isEmpty else {
+                    return
+                }
+
+                CoreDataManager.shared.updateItem(item: item, newName: newName) {
+                    self?.models = CoreDataManager.shared.getAllItems()
+                    DispatchQueue.main.async {
+                        self?.tableView.reloadData()
+                    }
+                }
+            }))
+
+            self?.present(alert, animated: true)
+        }))
+
+        sheet.addAction(UIAlertAction(title: "Mark as completed", style: .default, handler: { [weak self] _ in
+            CoreDataManager.shared.markAsCompleted(item: item) {
+                self?.models = CoreDataManager.shared.getAllItems()
+                DispatchQueue.main.async {
+                    self?.tableView.reloadData()
+                }
+            }
+        }))
+
+        sheet.addAction(UIAlertAction(title: "Delete", style: .destructive, handler: { [weak self] _ in
+            CoreDataManager.shared.deleteItem(item: item) {
+                self?.models = CoreDataManager.shared.getAllItems()
+                DispatchQueue.main.async {
+                    self?.tableView.reloadData()
+                }
+            }
+        }))
+
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+
+        present(sheet, animated: true)
     }
 }
