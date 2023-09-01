@@ -9,8 +9,6 @@ import CoreData
 import UIKit
 
 class CoreDataManager {
-    public var models = [ToDoListItem]()
-
     public static let shared = CoreDataManager()
 
     private lazy var persistentContainer: NSPersistentContainer = {
@@ -42,11 +40,9 @@ class CoreDataManager {
         }
     }
 
-    public func getAllItems() {
+    public func getAllItems() -> [ToDoListItem]{
         do {
-            models = try context.fetch(ToDoListItem.fetchRequest())
-        } catch {
-            print("Get all items error",error)
+            return (try? context.fetch(ToDoListItem.fetchRequest()) as? [ToDoListItem]) ?? []
         }
     }
 
@@ -57,7 +53,6 @@ class CoreDataManager {
 
         do {
             try context.save()
-            getAllItems()
             completion()
         } catch {
             print("Create error",error)
@@ -69,7 +64,6 @@ class CoreDataManager {
 
         do {
             try context.save()
-            getAllItems()
             completion()
         } catch {
             print("Delete error",error)
@@ -81,7 +75,6 @@ class CoreDataManager {
 
         do {
             try context.save()
-            getAllItems()
             completion()
         } catch {
             print("Update error",error)
