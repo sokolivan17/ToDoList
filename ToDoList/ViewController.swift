@@ -9,71 +9,43 @@ import UIKit
 
 class ViewController: UIViewController {
     private var models = [ToDoListItem]()
+    private let tableView = UITableView()
 
-    let tableView: UITableView = {
-        let table = UITableView()
-        table.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
-        return table
-    }()
-
+    // MARK: - Lifecycyle
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "To Do List"
         view.backgroundColor = .systemBackground
-        navigationController?.navigationBar.prefersLargeTitles = true
+        setupNavigationBar()
 
         models = CoreDataManager.shared.getAllItems()
 
-        view.addSubview(tableView)
-        tableView.delegate = self
-        tableView.dataSource = self
-        tableView.frame = view.bounds
+        setupTableView()
+    }
+
+    // MARK: - Setup Navigation Bar
+    private func setupNavigationBar() {
+        navigationController?.navigationBar.prefersLargeTitles = true
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add,
                                                             target: self,
                                                             action: #selector(didTapAdd))
     }
 
-    @objc private func didTapAdd() {
-        let alert = UIAlertController(title: "New Item",
-                                      message: "Enter new item",
-                                      preferredStyle: .alert)
-        alert.addTextField()
-        alert.addAction(UIAlertAction(title: "Submit", style: .cancel, handler: { [weak self] _ in
-            guard let field = alert.textFields?.first, let text = field.text, !text.isEmpty else {
-                return
-            }
+    // MARK: - Setup Table View
+    private func setupTableView() {
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.delegate = self
+        tableView.dataSource = self
 
-            CoreDataManager.shared.createItem(name: text) {
-                self?.models = CoreDataManager.shared.getAllItems()
-                DispatchQueue.main.async {
-                    self?.tableView.reloadData()
-                }
-            }
-        }))
+        view.addSubview(tableView)
 
-        present(alert, animated: true)
-    }
-}
-
-
-extension ViewController: UITableViewDelegate, UITableViewDataSource {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return models.count
+        tableView.frame = view.bounds
     }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let model = models[indexPath.row]
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        cell.textLabel?.text = model.name
-        return cell
-    }
-
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        let item = models[indexPath.row]
-
-        let sheet = UIAlertController(title: "Edit",
+    // MARK: - Setup Alert
+    private func setupAlert(with item: ToDoListItem) {
+        let sheet = UIAlertController(title: "Choose Action",
                                       message: nil,
                                       preferredStyle: .actionSheet)
 
@@ -85,6 +57,7 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
                                           preferredStyle: .alert)
             alert.addTextField()
             alert.textFields?.first?.text = item.name
+
             alert.addAction(UIAlertAction(title: "Save", style: .cancel, handler: { [weak self] _ in
                 guard let field = alert.textFields?.first, let newName = field.text, !newName.isEmpty else {
                     return
@@ -111,5 +84,48 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
         }))
 
         present(sheet, animated: true)
+    }
+
+    // MARK: - Actions
+    @objc private func didTapAdd() {
+        let alert = UIAlertController(title: "New Item",
+                                      message: "Enter new item",
+                                      preferredStyle: .alert)
+        alert.addTextField()
+        alert.addAction(UIAlertAction(title: "Submit", style: .cancel, handler: { [weak self] _ in
+            guard let field = alert.textFields?.first, let text = field.text, !text.isEmpty else {
+                return
+            }
+
+            CoreDataManager.shared.createItem(name: text) {
+                self?.models = CoreDataManager.shared.getAllItems()
+                DispatchQueue.main.async {
+                    self?.tableView.reloadData()
+                }
+            }
+        }))
+
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - UITableViewDelegate, UITableViewDataSource
+extension ViewController: UITableViewDelegate, UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return models.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let model = models[indexPath.row]
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        cell.textLabel?.text = model.name
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let item = models[indexPath.row]
+
+        setupAlert(with: item)
     }
 }
