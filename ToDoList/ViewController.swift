@@ -8,6 +8,7 @@
 import UIKit
 
 class ViewController: UIViewController {
+    private var models = CoreDataManager.shared.models
 
     override func viewDidLoad() {
         super.viewDidLoad()
